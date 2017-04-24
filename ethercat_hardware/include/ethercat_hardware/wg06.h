@@ -41,7 +41,7 @@
 
 #include <pr2_msgs/PressureState.h>
 #include <pr2_msgs/AccelerometerState.h>
-#include <ethercat_hardware/RawFTData.h>
+#include <ethercat_hardware/RawFTDataStamped.h>
 #include <geometry_msgs/WrenchStamped.h>
 
 struct WG06StatusWithAccel
@@ -104,6 +104,7 @@ public:
   double calibration_coeff_[36];
   double offsets_[6];
   double gains_[6];
+  std::string frame_id_;
 };
 
 
@@ -234,7 +235,7 @@ private:
   pr2_hardware_interface::ForceTorque force_torque_;
 
   //! Realtime Publisher of RAW F/T data 
-  realtime_tools::RealtimePublisher<ethercat_hardware::RawFTData> *raw_ft_publisher_;
+  realtime_tools::RealtimePublisher<ethercat_hardware::RawFTDataStamped> *raw_ft_publisher_;
   realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped> *ft_publisher_;
   //pr2_hardware_interface::AnalogIn ft_analog_in_;      //!< Provides
   FTParamsInternal ft_params_;

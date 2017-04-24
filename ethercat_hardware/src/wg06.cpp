@@ -359,14 +359,14 @@ bool WG06::initializeFT(pr2_hardware_interface::HardwareInterface *hw)
   std::string topic = "raw_ft";
   if (!actuator_.name_.empty())
     topic = topic + "/" + string(actuator_.name_);
-  raw_ft_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::RawFTData>(ros::NodeHandle(), topic, 1);
+  raw_ft_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::RawFTDataStamped>(ros::NodeHandle(), topic, 1);
   if (raw_ft_publisher_ == NULL)
   {
     ROS_FATAL("Could not allocate raw_ft publisher");
     return false;
   }
   // Allocate space for raw f/t data values
-  raw_ft_publisher_->msg_.samples.reserve(MAX_FT_SAMPLES);
+  raw_ft_publisher_->msg_.raw_data.samples.reserve(MAX_FT_SAMPLES);
 
   force_torque_.command_.halt_on_error_ = false;
   force_torque_.state_.good_ = true;
@@ -765,14 +765,14 @@ bool WG06::unpackFT(WG06StatusWithAccelAndFT *status, WG06StatusWithAccelAndFT *
   // Put all new samples in buffer and publish it
   if ((raw_ft_publisher_ != NULL) && (raw_ft_publisher_->trylock()))
   {
-    raw_ft_publisher_->msg_.samples.resize(usable_samples);
-    raw_ft_publisher_->msg_.sample_count = ft_sample_count_;
-    raw_ft_publisher_->msg_.missed_samples = ft_missed_samples_;
+    raw_ft_publisher_->msg_.raw_data.samples.resize(usable_samples);
+    raw_ft_publisher_->msg_.raw_data.sample_count = ft_sample_count_;
+    raw_ft_publisher_->msg_.raw_data.missed_samples = ft_missed_samples_;
     for (unsigned sample_num=0; sample_num<usable_samples; ++sample_num)
     {
       // put data into message so oldest data is first element
       const FTDataSample &sample(status->ft_samples_[sample_num]);
-      ethercat_hardware::RawFTDataSample &msg_sample(raw_ft_publisher_->msg_.samples[usable_samples-sample_num-1]);
+      ethercat_hardware::RawFTDataSample &msg_sample(raw_ft_publisher_->msg_.raw_data.samples[usable_samples-sample_num-1]);
       msg_sample.sample_count = ft_sample_count_ - sample_num;
       msg_sample.data.resize(NUM_FT_CHANNELS);
       for (unsigned ch_num=0; ch_num<NUM_FT_CHANNELS; ++ch_num)
@@ -781,7 +781,9 @@ bool WG06::unpackFT(WG06StatusWithAccelAndFT *status, WG06StatusWithAccelAndFT *
       }
       msg_sample.vhalf = sample.vhalf_;
     }
-    raw_ft_publisher_->msg_.sample_count = ft_sample_count_;
+    raw_ft_publisher_->msg_.header.stamp = current_time;
+    raw_ft_publisher_->msg_.header.frame_id = ft_params_.frame_id_;
+    raw_ft_publisher_->msg_.raw_data.sample_count = ft_sample_count_;
     raw_ft_publisher_->unlockAndPublish();
   }
 
@@ -789,6 +791,7 @@ bool WG06::unpackFT(WG06StatusWithAccelAndFT *status, WG06StatusWithAccelAndFT *
   if ( (usable_samples > 0) && (ft_publisher_ != NULL) && (ft_publisher_->trylock()) )
   {
     ft_publisher_->msg_.header.stamp = current_time;
+    ft_publisher_->msg_.header.frame_id = ft_params_.frame_id_;
     ft_publisher_->msg_.wrench = ft_state.samples_[usable_samples-1];
     ft_publisher_->unlockAndPublish();
   }
@@ -1174,6 +1177,20 @@ bool FTParamsInternal::getRosParams(ros::NodeHandle nh)
   if (!getDoubleArray(params, "gains", gains_, 6))
   {
     return false;
+  }
+
+  if(!params.hasMember("frame_id"))
+  {
+    ROS_ERROR("Expected ft_param to have frame_id element");
+    return false;
+  } else {
+    XmlRpc::XmlRpcValue value = params["frame_id"];
+    if (value.getType() == XmlRpc::XmlRpcValue::TypeString){
+      value.stringFromXml(frame_id_,0);
+    } else{
+      ROS_ERROR("Expected FT param frame_id to be a string");
+      return false;
+    }
   }
 
   XmlRpc::XmlRpcValue coeff_matrix = params["calibration_coeff"];

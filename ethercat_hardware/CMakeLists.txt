@@ -18,6 +18,7 @@ BoardInfo.msg
 MotorTemperature.msg
 MotorTrace.msg
 MotorTraceSample.msg
+RawFTDataStamped.msg
 RawFTData.msg
 RawFTDataSample.msg
 )
