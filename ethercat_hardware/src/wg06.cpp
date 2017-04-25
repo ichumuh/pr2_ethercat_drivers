@@ -1186,7 +1186,7 @@ bool FTParamsInternal::getRosParams(ros::NodeHandle nh)
   } else {
     XmlRpc::XmlRpcValue value = params["frame_id"];
     if (value.getType() == XmlRpc::XmlRpcValue::TypeString){
-      value.stringFromXml(frame_id_,0);
+      frame_id_ = static_cast<std::string>(value);
     } else{
       ROS_ERROR("Expected FT param frame_id to be a string");
       return false;
