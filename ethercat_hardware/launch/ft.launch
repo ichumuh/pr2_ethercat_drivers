@@ -7,7 +7,7 @@
     <param name="enable_ft_sensor" value="True" type="bool"/>    
     <param name="enable_pressure_sensor" value="False" type="bool"/>
     <rosparam command="load" file="/usr/share/pr2-ft/ft12396_params.yaml"/>
-    <rosparam command="load" file="/usr/share/pr2-ft/wg035_revF_params.yaml"/>
+    <rosparam command="load" file="/home/stelter/ros_ws/src/pr2_ethercat_drivers/ethercat_hardware/launch/wg035_revF_params.yaml"/>
   </group>
 
 

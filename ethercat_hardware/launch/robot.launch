@@ -1,0 +1,18 @@
+<launch>
+
+    <!-- Robot Description --> <param name="robot_description" textfile="/etc/ros/indigo/urdf/robot.xml" />
+
+    <!-- Robot Analyzer --> <rosparam command="load" file="$(find pr2_bringup)/config/pr2_analyzers.yaml" ns="diag_agg" />
+
+    <arg name="c2" default="true"/>
+    
+    <!-- Robot bringup -->
+    <include file="$(find ethercat_hardware)/pr2.launch">
+        <arg name="c2" value="$(arg c2)"/>
+    </include>
+    
+    <include file="$(find ethercat_hardware)/ft.launch" />
+
+    <rosparam file="/etc/ros/robot.yaml"/>
+
+</launch> 
